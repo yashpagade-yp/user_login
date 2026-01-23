@@ -1,0 +1,12 @@
+
+fastapi
+uvicorn
+pydantic
+httpx
+cryptography
+PyJWT
+passlib[bcrypt]
+bcrypt
+python-dotenv
+motor
+odmantic
