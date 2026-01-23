@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from core.database.database import connect_to_mongo, close_mongo_connection
-from core.routers.user_router import router as user_router
+
+from core.apis.routers.user_router import user_router
 from core import logger
 
 logging = logger(__name__)
@@ -26,8 +27,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Include routers
-app.include_router(user_router)
+app.include_router(user_router, tags=["User Management"])
 
 
 @app.get("/", tags=["Health"])

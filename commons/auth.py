@@ -1,157 +1,93 @@
-"""
-Authentication Module
-=====================
-Handles JWT token generation, validation, and user authentication.
-
-You can replace this code with your own authentication implementation.
-"""
-
-from datetime import datetime, timedelta
-from typing import Optional
-from jose import JWTError, jwt
+import time
+import jwt
+import os
 from passlib.context import CryptContext
-from fastapi import HTTPException, status, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException, status
+from dotenv import load_dotenv
 
-# ============================================================
-# CONFIGURATION - Replace with your own secret key in production
-# ============================================================
-SECRET_KEY = "your-super-secret-key-change-this-in-production"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Password hashing context
+load_dotenv()
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Bearer token security
-security = HTTPBearer()
+JWT_SECRET = os.environ.get("secret")
+JWT_ALGORITHM = os.environ.get("algorithm")
 
 
-# ============================================================
-# PASSWORD UTILITIES
-# ============================================================
+def signJWT(
+    id: str,
+    expiry_duration: int = 3600,
+    status: str = "ACTIVE",
+):
+    """
+    Sign a JWT token with user role, id, expiry duration, and status.
+    """
+    if not JWT_SECRET or not JWT_ALGORITHM:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="JWT secret or algorithm not configured",
+        )
+
+    payload = {
+        "id": id,
+        "status": status,
+        "expires": time.time() + expiry_duration,
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return token
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+def encodeJWT(payload: dict = {}, expiry_duration: int = 3600):
+    """
+    Encode a JWT token with a given payload.
+    """
+    if not JWT_SECRET or not JWT_ALGORITHM:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="JWT secret or algorithm not configured",
+        )
+
+    payload_copy = dict(payload) if payload else {}
+    payload_copy["expires"] = time.time() + expiry_duration
+    token = jwt.encode(payload_copy, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return token
 
 
-def get_password_hash(password: str) -> str:
-    """Generate password hash"""
+def decodeJWT(token: str):
+    """
+    Decode a JWT token to extract user role, id, status, and expiry time.
+    """
+    try:
+        decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return decoded_token if decoded_token.get("expires") > time.time() else None
+    except Exception:
+        return None
+
+
+def encrypt_password(password: str) -> str:
+    """
+    Encrypt a plain password using bcrypt hashing.
+    """
     return pwd_context.hash(password)
 
 
-# ============================================================
-# JWT TOKEN UTILITIES
-# ============================================================
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Create a JWT access token
-
-    Args:
-        data: Payload data to encode in the token
-        expires_delta: Optional custom expiration time
-
-    Returns:
-        Encoded JWT token string
+    Verify if the provided plain password matches the hashed password.
     """
-    to_encode = data.copy()
-
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-    return encoded_jwt
+    return pwd_context.verify(plain_password, hashed_password)
 
 
-def decode_token(token: str) -> dict:
+def encode_reset_password_token(email: str, expiry_duration: int = 300) -> str:
     """
-    Decode and validate a JWT token
-
-    Args:
-        token: JWT token string
-
-    Returns:
-        Decoded token payload
-
-    Raises:
-        HTTPException: If token is invalid or expired
+    Encode a reset password token with the user's email.
     """
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
+    if not JWT_SECRET or not JWT_ALGORITHM:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="JWT secret or algorithm not configured",
         )
 
-
-# ============================================================
-# AUTHENTICATION DEPENDENCIES
-# ============================================================
-
-
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-) -> dict:
-    """
-    Dependency to get current authenticated user from token
-
-    Usage in routes:
-        @router.get("/protected")
-        async def protected_route(user: dict = Depends(get_current_user)):
-            return {"user": user}
-    """
-    token = credentials.credentials
-    payload = decode_token(token)
-
-    # You can add additional user lookup logic here
-    # For example, fetch user from database
-
-    return payload
-
-
-def require_admin(user: dict = Depends(get_current_user)) -> dict:
-    """
-    Dependency to require admin role
-
-    Usage in routes:
-        @router.delete("/admin-only")
-        async def admin_route(user: dict = Depends(require_admin)):
-            return {"admin": user}
-    """
-    if user.get("role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
-        )
-    return user
-
-
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-
-
-def create_user_token(user_id: str, phone: str, role: str = "customer") -> str:
-    """
-    Create a token for a pharmacy user
-
-    Args:
-        user_id: Unique user identifier
-        phone: User's phone number
-        role: User role (customer, pharmacist, admin)
-
-    Returns:
-        JWT access token
-    """
-    token_data = {"sub": user_id, "phone": phone, "role": role}
-    return create_access_token(token_data)
+    payload = {"email": email, "expires": time.time() + expiry_duration}
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return token
