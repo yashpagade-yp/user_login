@@ -3,6 +3,7 @@ from core.apis.schemas.requests.user_request import UserCreateRequest
 from core import logger
 from fastapi import HTTPException, status
 from commons.auth import encrypt_password, signJWT
+from core.apis.schemas.requests.user_request import UserLoginRequest
 
 logging = logger(__name__)
 
@@ -38,3 +39,41 @@ class UserController:
         except Exception as error:
             logging.error(f"Error in user_controller.create_user: {str(error)}")
             raise error
+
+    
+    async def login_user(self, login_data: dict):
+        try:
+            logger.info("Executing user_controller.Login_user function")
+            user = await self.UserCRUD.get_by_email(login_data.get("email", ""))
+            if not user:
+                logging.info("Login failed: Email not Found")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalied Email",
+                )
+                ## verify password
+            if not
+            pwd_context.verify(login_data.password,user.hashed_password):
+            logging.info("Login Failed:Incorrect Password")
+            raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED,
+            datail = "invalid email or password")
+            saved_user_login = await self.UserCRUD.create(user_request)
+
+                ##create jwt tokan    
+            access_token = signJWT(
+                id=str(saved_user_login.id),
+                expiry_duration=3100,
+                status=saved_user_login.status,
+            )    
+
+            user_log = saved_user_login.model_dump()
+            user_log["id"] = str(saved_user_login.id)  # Convert ObjectId to string
+            return {"user": user_data, "access_token": access_token, "message": "Login Succesfully"}
+        except Exception as error:
+            logging.error(f"Error in user_controller.create_user: {str(error)}")
+            raise error
+
+
+                
+
+

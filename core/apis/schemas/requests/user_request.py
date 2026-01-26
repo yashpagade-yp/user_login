@@ -76,6 +76,14 @@ class UserCreateRequest(BaseModel):
         default=None, description="User's physical address"
     )
 
+
+class UserLoginRequest(BaseModel):
+    name: Optional[str] = Field(min_length=2, max_length=50, description="Users name")
+    email: EmailStr = Field(..., description="User email Address")
+    password: str = Field(
+        ..., min_length=8, description="User's password (min 8 characters)"
+    )
+
     @field_validator("mobile_number")
     @classmethod
     def validate_mobile_number(cls, value: str) -> str:
