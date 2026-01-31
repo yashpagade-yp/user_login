@@ -11,7 +11,7 @@ from enum import Enum
 from typing import Optional
 from datetime import datetime
 
-from odmantic import Field, Model
+from odmantic import Field, Model, ObjectId
 from pydantic import BaseModel, EmailStr, field_validator
 
 
@@ -105,6 +105,10 @@ class User(Model):
     )
     updated_at: datetime = Field(
         default_factory=datetime.utcnow, description="Last update timestamp"
+    )
+    otp: Optional[str] = Field(default=None, description="OTP for password reset")
+    otp_expiry: Optional[datetime] = Field(
+        default=None, description="OTP expiry timestamp"
     )
 
     @field_validator("mobile_number")

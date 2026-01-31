@@ -1,7 +1,7 @@
 import time
 import jwt
 import os
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # pss ver hash
 from fastapi import HTTPException, status
 from dotenv import load_dotenv
 
@@ -17,20 +17,20 @@ JWT_ALGORITHM = os.environ.get("algorithm")
 def signJWT(
     id: str,
     expiry_duration: int = 3600,
-    status: str = "ACTIVE",
+    user_status: str = "ACTIVE",
 ):
     """
     Sign a JWT token with user role, id, expiry duration, and status.
     """
     if not JWT_SECRET or not JWT_ALGORITHM:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail="JWT secret or algorithm not configured",
         )
 
     payload = {
         "id": id,
-        "status": status,
+        "status": user_status,
         "expires": time.time() + expiry_duration,
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -43,7 +43,7 @@ def encodeJWT(payload: dict = {}, expiry_duration: int = 3600):
     """
     if not JWT_SECRET or not JWT_ALGORITHM:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail="JWT secret or algorithm not configured",
         )
 
@@ -84,7 +84,7 @@ def encode_reset_password_token(email: str, expiry_duration: int = 300) -> str:
     """
     if not JWT_SECRET or not JWT_ALGORITHM:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail="JWT secret or algorithm not configured",
         )
 

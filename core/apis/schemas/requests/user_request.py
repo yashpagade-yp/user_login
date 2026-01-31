@@ -76,14 +76,6 @@ class UserCreateRequest(BaseModel):
         default=None, description="User's physical address"
     )
 
-
-class UserLoginRequest(BaseModel):
-    name: Optional[str] = Field(min_length=2, max_length=50, description="Users name")
-    email: EmailStr = Field(..., description="User email Address")
-    password: str = Field(
-        ..., min_length=8, description="User's password (min 8 characters)"
-    )
-
     @field_validator("mobile_number")
     @classmethod
     def validate_mobile_number(cls, value: str) -> str:
@@ -92,3 +84,78 @@ class UserLoginRequest(BaseModel):
         if not cleaned.isdigit():
             raise ValueError("Mobile number must contain only digits")
         return value
+
+
+class UserLoginRequest(BaseModel):
+    name: Optional[str] = Field(
+        default=None, min_length=2, max_length=50, description="Users name"
+    )
+    email: EmailStr = Field(..., description="User email Address")
+    password: str = Field(
+        ..., min_length=8, description="User's password (min 8 characters)"
+    )
+
+
+class UserResetPassword(BaseModel):
+    old_password: str = Field(
+        ..., min_length=8, description="User's password (min 8 characters)"
+    )
+    new_password: str = Field(
+        ..., min_length=8, description="User's new password (min 8 characters)"
+    )
+
+
+class UpdateUserRequest(BaseModel):
+    """
+    Request schema for updating user information.
+
+    All fields are optional - only provided fields will be updated.
+    """
+
+    first_name: Optional[str] = Field(
+        None, min_length=2, max_length=50, description="User's first name"
+    )
+    last_name: Optional[str] = Field(
+        None, min_length=2, max_length=50, description="User's last name"
+    )
+    mobile_number: Optional[str] = Field(
+        None,
+        min_length=10,
+        max_length=15,
+        description="User's mobile number with country code",
+    )
+    address: Optional[AddressCreateRequest] = Field(
+        None, description="User's physical address"
+    )
+    hashed_password: Optional[str] = Field(
+        None, description="Hashed password (for internal use)"
+    )
+
+    @field_validator("mobile_number")
+    @classmethod
+    def validate_mobile_number(cls, value: str) -> str:
+        """Validate that mobile number contains only digits."""
+        if value is None:
+            return value
+        cleaned = value.replace("+", "").replace("-", "").replace(" ", "")
+        if not cleaned.isdigit():
+            raise ValueError("Mobile number must contain only digits")
+        return value
+
+
+# Forgot Password
+class UserForgotPassword(BaseModel):
+    email: EmailStr = Field(..., description="User email Address")
+
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr = Field(..., description="User email Address")
+    otp: str = Field(..., min_length=4, max_length=4, description="4-digit OTP code")
+
+
+class ResetPasswordWithOTPRequest(BaseModel):
+    email: EmailStr = Field(..., description="User email Address")
+    otp: str = Field(..., min_length=4, max_length=4, description="4-digit OTP code")
+    new_password: str = Field(
+        ..., min_length=8, description="User's new password (min 8 characters)"
+    )

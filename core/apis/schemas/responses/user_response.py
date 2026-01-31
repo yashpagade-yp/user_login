@@ -8,30 +8,11 @@ These schemas ensure consistent and secure API responses by:
 - Including authentication tokens where applicable
 """
 
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
-
-
-class AddressResponse(BaseModel):
-    """
-    Response schema for user address information.
-
-    Attributes:
-        street_address: Street name and number
-        city: City name
-        state: State or province
-        postal_code: ZIP or postal code
-        country: Country name
-    """
-
-    street_address: str = Field(
-        ..., description="Street address with house/building number"
-    )
-    city: str = Field(..., description="City name")
-    state: str = Field(..., description="State or province")
-    postal_code: str = Field(..., description="ZIP or postal code")
-    country: str = Field(..., description="Country name")
+from core.apis.schemas.common import AddressResponse
+from core.apis.schemas.responses.order_responses import OrderResponse
 
 
 class UserResponse(BaseModel):
@@ -84,6 +65,7 @@ class UserCreateResponse(BaseModel):
 
     user: UserResponse = Field(..., description="Created user data")
     access_token: str = Field(..., description="JWT access token for authentication")
+    orders: List[OrderResponse] = Field(default=[], description="List of user orders")
 
 
 class UserListResponse(BaseModel):
@@ -131,3 +113,13 @@ class UserUpdateResponse(BaseModel):
     message: str = Field(
         default="User updated successfully", description="Success message"
     )
+
+
+class PasswordResetResponce(BaseModel):
+    message: str = Field(..., description="success message")
+
+
+# Forgot Password
+class ForgotPasswordResponse(BaseModel):
+    email: EmailStr = Field(..., description="User email Address")
+    message: str = Field(..., description="Success message")
