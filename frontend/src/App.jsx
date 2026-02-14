@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import OrderList from './pages/OrderList';
 import OrderCreate from './pages/OrderCreate';
+import ForgotPassword from './pages/ForgotPassword';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -29,6 +30,7 @@ function App() {
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
 
                         <Route path="/" element={
                             <ProtectedRoute>

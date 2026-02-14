@@ -68,6 +68,11 @@ const Login = () => {
                             placeholder="••••••••"
                             required
                         />
+                        <div style={{ textAlign: 'right', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+                            <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                Forgot Password?
+                            </Link>
+                        </div>
 
                         {error && (
                             <div style={{
